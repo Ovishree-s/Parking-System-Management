@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Parking System - Slot Prediction & Dynamic Pricing</title>
+  <!-- Inline CSS for simplicity -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f2f2f2;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    form, .results {
+      margin-top: 20px;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+    input, select, button {
+      padding: 10px;
+      width: 100%;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #4CAF50;
+      color: #fff;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .results p {
+      font-size: 18px;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Parking Slot Prediction & Dynamic Pricing</h2>
+    
+    <!-- Prediction Form -->
+    <form id="predictionForm">
+      <label for="day">Day of the Week:</label>
+      <select id="day">
+        <option value="Monday">Monday</option>
+        <option value="Tuesday">Tuesday</option>
+        <option value="Wednesday">Wednesday</option>
+        <option value="Thursday">Thursday</option>
+        <option value="Friday">Friday</option>
+        <option value="Saturday">Saturday</option>
+        <option value="Sunday">Sunday</option>
+      </select>
+      
+      <label for="time">Time of the Day (0-23):</label>
+      <input type="number" id="time" min="0" max="23" required>
+      
+      <label for="weather">Weather:</label>
+      <select id="weather">
+        <!-- Make sure values match the backend mapping -->
+        <option value="Clear">Clear</option>
+        <option value="Cloudy">Cloudy</option>
+        <option value="Rainy">Rainy</option>
+      </select>
+      
+      <label for="events">Nearby Events:</label>
+      <select id="events">
+        <option value="No">No</option>
+        <option value="Yes">Yes</option>
+      </select>
+      
+      <!-- The Predict button calls our JS function -->
+      <button type="button" onclick="predictParking()">Predict</button>
+    </form>
+    
+    <!-- Prediction Results Display -->
+    <div class="results">
+      <p id="slotPredictionResult">Slot Availability: -</p>
+      <p id="pricePredictionResult">Dynamic Price: -</p>
+    </div>
+  </div>
+
+  <!-- Include the JavaScript file -->
+  <script src="script.js"></script>
+</body>
+</html>
