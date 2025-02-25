@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking System</title>
+    
+    <!-- Firebase SDK Modules (v9+) -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+      import { getDatabase, ref, set, get, child, onValue, push, remove, update, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+
+      // Firebase config object (replace with your own config from Firebase Console)
+      const firebaseConfig = {
+          apiKey: "AIzaSyDbBpMXMGaRkE3WhnBOrp0XP2tAXpn9uu0",
+          authDomain: "parking-system-managemen-277b5.firebaseapp.com",
+          databaseURL: "https://parking-system-managemen-277b5-default-rtdb.firebaseio.com",
+          projectId: "parking-system-managemen-277b5",
+          storageBucket: "parking-system-managemen-277b5.firebasestorage.app",
+          messagingSenderId: "181875608379",
+          appId: "1:181875608379:web:a259a855b8ab5ff934851e"
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const database = getDatabase(app);
+
+      // Expose Firebase functions to global scope
+      window.firebase = { database, ref, set, get, child, onValue, push, remove, update, query, orderByChild, equalTo };
+
+      // Initialize the reserveSlot function in global scope for the onclick event
+      window.reserveSlot = function() {
+          const userName = document.getElementById("username").value;
+          const date = document.getElementById("date").value;
+          const time = document.getElementById("time").value;
+          const parkingSlot = document.getElementById("parkingSlot").value;
+
+          if (!userName || !date || !time || !parkingSlot) {
+              alert("Please fill in all fields!");
+              return;
+          }
+
+          // Query Firebase to check if this slot is already booked
+          const reservationsRef = ref(database, 'reservations');
+          const slotQuery = query(reservationsRef, 
+            orderByChild('date'), 
+            equalTo(date));
+          
+          // Check if this parking slot is already reserved for the selected date and time
+          get(slotQuery).then((snapshot) => {
+              const data = snapshot.val();
+              let isSlotAvailable = true;
+
+              if (data) {
+                  // Loop through existing reservations to check for conflicts
+                  Object.values(data).forEach(reservation => {
+                      if (reservation.parkingSlot === parkingSlot && reservation.time === time) {
+                          isSlotAvailable = false;
+                      }
+                  });
+              }
+
+              if (!isSlotAvailable) {
+                  alert("This Slot is filled already!");
+              } else {
+                  // If the slot is available, proceed to book the reservation
+                  const newReservationRef = push(ref(database, 'reservations'));
+                  set(newReservationRef, {
+                      user_name: userName,
+                      date,
+                      time,
+                      parkingSlot
+                  })
+                  .then(() => {
+                      alert("Reservation made successfully!");
+                      getReservations();
+                      clearForm();
+                  })
+                  .catch((error) => {
+                      console.error("Error making reservation:", error);
+                  });
+              }
+          }).catch((error) => {
+              console.error("Error checking slot availability:", error);
+          });
+      };
+
+      // Fetch reservations from Firebase and display them
+      function getReservations() {
+          const reservationsRef = ref(database, 'reservations');
+          
+          // Using onValue to listen for changes
+          onValue(reservationsRef, (snapshot) => {
+              const data = snapshot.val() || {};
+              const reservations = Object.keys(data).map(key => ({
+                  id: key, 
+                  ...data[key]
+              }));
+              
+              // Call displayReservations to update the UI
+              displayReservations(reservations);
+          });
+      }
+
+      // Function to display reservations in an organized way
+      function displayReservations(reservations) {
+          const list = document.getElementById("reservations");
+          list.innerHTML = ""; // Clear the list before displaying updated reservations
+
+          if (reservations.length === 0) {
+              list.innerHTML = "<li>No reservations yet!</li>";
+              return;
+          }
+
+          // Loop through the reservations and display them
+          reservations.forEach(reservation => {
+              const item = document.createElement("li");
+              item.innerHTML = `  
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px;">
+                      <div style="flex-grow: 1;">
+                          <strong>Name:</strong> ${reservation.user_name} <br>
+                          <strong>Date:</strong> ${reservation.date} <br>
+                          <strong>Time:</strong> ${reservation.time} <br>
+                          <strong>Slot:</strong> ${reservation.parkingSlot}
+                      </div>
+                      <div style="display: flex; gap: 10px;">
+                          <button onclick="editReservation('${reservation.id}')" style="background-color: #ffa500; color: white; padding: 8px 12px; border-radius: 5px; cursor: pointer;">✏️ Edit</button>
+                          <button onclick="deleteReservation('${reservation.id}')" style="background-color: #f44336; color: white; padding: 8px 12px; border-radius: 5px; cursor: pointer;">❌ Delete</button>
+                      </div>
+                  </div>
+              `;
+              list.appendChild(item);
+          });
+
+          // Update reservation count
+          document.getElementById("reservationCount").innerText = `Total Reservations: ${reservations.length}`;
+      }
+
+      // Delete reservation
+      function deleteReservation(id) {
+          if (!confirm("Are you sure you want to delete this reservation?")) return;
+
+          const reservationRef = ref(database, 'reservations/' + id);
+          remove(reservationRef)
+              .then(() => {
+                  alert("Reservation deleted successfully!");
+                  getReservations();  // Refresh the reservation list
+              })
+              .catch((error) => {
+                  console.error("Error deleting reservation:", error);
+              });
+      }
+
+      // Edit reservation
+      function editReservation(id) {
+          const reservationRef = ref(database, 'reservations/' + id);
+          get(reservationRef).then((snapshot) => {
+              const data = snapshot.val();
+              if (data) {
+                  // Pre-fill the form with current reservation data for editing
+                  document.getElementById("username").value = data.user_name;
+                  document.getElementById("date").value = data.date;
+                  document.getElementById("time").value = data.time;
+                  document.getElementById("parkingSlot").value = data.parkingSlot;
+
+                  // Change the button to an "Update" button
+                  const reserveButton = document.querySelector("button[onclick='reserveSlot()']");
+                  reserveButton.innerText = "Update Reservation";
+                  reserveButton.setAttribute("onclick", `updateReservation('${id}')`);
+              }
+          }).catch((error) => {
+              console.error("Error fetching reservation data for editing:", error);
+          });
+      }
+
+      // Update reservation
+      function updateReservation(id) {
+          const userName = document.getElementById("username").value;
+          const date = document.getElementById("date").value;
+          const time = document.getElementById("time").value;
+          const parkingSlot = document.getElementById("parkingSlot").value;
+
+          if (!userName || !date || !time || !parkingSlot) {
+              alert("Please fill in all fields!");
+              return;
+          }
+
+          // Update the reservation in Firebase
+          const reservationRef = ref(database, 'reservations/' + id);
+          update(reservationRef, {
+              user_name: userName,
+              date,
+              time,
+              parkingSlot
+          }).then(() => {
+              alert("Reservation updated successfully!");
+              getReservations();
+              clearForm();
+
+              // Change the button back to "Reserve Slot"
+              const reserveButton = document.querySelector("button[onclick='updateReservation']"); 
+              reserveButton.innerText = "Reserve Slot";
+              reserveButton.setAttribute("onclick", "reserveSlot()");
+          }).catch((error) => {
+              console.error("Error updating reservation:", error);
+          });
+      }
+
+      // Clear the form after reservation
+      function clearForm() {
+          document.getElementById("username").value = "";
+          document.getElementById("date").value = "";
+          document.getElementById("time").value = "";
+          document.getElementById("parkingSlot").value = "";
+      }
+
+      // Initial call to fetch reservations
+      getReservations();
+    </script>
+
+    <!-- Styles for the UI -->
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+            font-size: 36px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="text"], input[type="date"], input[type="time"], select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #reservations {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #reservations li {
+            background-color: #fff;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #reservations button {
+            width: auto;
+            padding: 5px 10px;
+        }
+
+        .reservation-info {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Smart Parking Reservation</h1>
+
+        <!-- Reservation Form -->
+        <div class="form-group">
+            <label for="username">Your Name:</label>
+            <input type="text" id="username" placeholder="Enter your name">
+        </div>
+        <div class="form-group">
+            <label for="date">Reservation Date:</label>
+            <input type="date" id="date">
+        </div>
+        <div class="form-group">
+            <label for="time">Reservation Time:</label>
+            <input type="time" id="time">
+        </div>
+        <div class="form-group">
+            <label for="parkingSlot">Parking Slot:</label>
+            <select id="parkingSlot">
+                <option value="A1">A1</option>
+                <option value="A2">A2</option>
+                <option value="A3">A3</option>
+                <option value="B1">B1</option>
+                <option value="B2">B2</option>
+            </select>
+        </div>
+
+        <button onclick="reserveSlot()">Reserve Slot</button>
+
+        <!-- Reservation List -->
+        <h2>Total Reservations: <span id="reservationCount">0</span></h2>
+        <ul id="reservations"></ul>
+    </div>
+
+</body>
+</html>
