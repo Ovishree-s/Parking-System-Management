@@ -1,0 +1,9 @@
+slot_id,day_of_week,time_of_day,weather,nearby_events,occupancy,dynamic_price
+1,Monday,10,Clear,No,0,5
+2,Monday,18,Rain,Yes,1,10
+3,Tuesday,12,Clear,No,1,8
+4,Wednesday,15,Cloudy,Yes,0,7
+5,Thursday,9,Clear,No,0,6
+6,Friday,20,Rain,Yes,1,12
+7,Saturday,14,Clear,No,1,9
+8,Sunday,16,Cloudy,No,0,7
