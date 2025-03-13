@@ -15,34 +15,49 @@ const firebaseConfig = {
 const appFirebase = initializeApp(firebaseConfig);
 const database = getDatabase(appFirebase);
 
-// --- Reservation Functions ---
+// --- Reservation Function ---
 function reserveSlot() {
   const userName = document.getElementById("username").value.trim();
   const date = document.getElementById("date").value;
   const time = document.getElementById("time").value;
   const parkingSlot = document.getElementById("parkingSlot").value;
-  
+
   if (!userName || !date || !time || !parkingSlot) {
     alert("Please fill in all fields!");
     return;
   }
 
-  const newReservationRef = push(ref(database, 'reservations'));
-  set(newReservationRef, {
-    user_name: userName,
-    date: date,
-    time: time,
-    parkingSlot: parkingSlot,
-    price: 5
-  })
-  .then(() => {
-    alert("Reservation made successfully!");
-    getReservations();
-    clearReservationForm();
-  })
-  .catch(error => {
-    console.error("Error making reservation:", error);
-  });
+  // Retrieve current reservations
+  const reservationsRef = ref(database, 'reservations');
+  onValue(reservationsRef, snapshot => {
+    const reservations = snapshot.val() || {};
+    const slotTaken = Object.values(reservations).some(res => 
+      res.date === date && res.time === time && res.parkingSlot === parkingSlot
+    );
+
+    if (slotTaken) {
+      alert("⚠️ Slot is already reserved! Please choose another slot.");
+      return;
+    }
+
+    // If slot is available, proceed with reservation
+    const newReservationRef = push(reservationsRef);
+    set(newReservationRef, {
+      user_name: userName,
+      date: date,
+      time: time,
+      parkingSlot: parkingSlot,
+      price: 5
+    })
+    .then(() => {
+      alert("✅ Reservation made successfully!");
+      getReservations();
+      clearReservationForm();
+    })
+    .catch(error => {
+      console.error("Error making reservation:", error);
+    });
+  }, { onlyOnce: true });
 }
 
 function getReservations() {
@@ -75,7 +90,7 @@ function deleteReservation(id) {
   const reservationRef = ref(database, 'reservations/' + id);
   remove(reservationRef)
     .then(() => {
-      alert("Reservation deleted successfully!");
+      alert("✅ Reservation deleted successfully!");
       getReservations();
     })
     .catch(error => console.error("Error deleting reservation:", error));
@@ -88,57 +103,7 @@ function clearReservationForm() {
   document.getElementById("parkingSlot").value = "";
 }
 
-// --- Prediction Function ---
-async function predictParking() {
-  const day = document.getElementById("pred_day").value;
-  const timeOfDay = document.getElementById("pred_time").value;
-  const isHoliday = document.getElementById("is_holiday").value === "true"; // Convert to boolean
-  const weatherCondition = document.getElementById("weather_condition").value;
-  const nearbyEvents = document.getElementById("nearby_events").value;
-
-  if (!day || !timeOfDay || weatherCondition === "" || nearbyEvents === "") {
-    alert("Please fill in all fields before predicting.");
-    return;
-  }
-
-  const requestData = {
-    day: day,
-    time_of_day: timeOfDay,
-    is_holiday: isHoliday ? 1 : 0,
-    weather_condition: weatherCondition,
-    nearby_events: nearbyEvents
-  };
-
-  console.log("Sending prediction request with:", requestData);
-
-  try {
-    const response = await fetch("http://127.0.0.1:5000/predict", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(requestData)
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || "Unknown server error");
-    }
-
-    document.getElementById("slotPredictionResult").innerText =
-      "Slot Availability: " + (result.slot_availability ? "Available" : "Not Available");
-    document.getElementById("pricePredictionResult").innerText =
-      "Dynamic Price per Hour: $" + result.predicted_price;
-  } catch (error) {
-    console.error("Prediction error:", error);
-    document.getElementById("slotPredictionResult").innerText = "Error retrieving prediction.";
-    document.getElementById("pricePredictionResult").innerText = "";
-  }
-}
-
 // Attach functions to window to make them accessible globally
 window.reserveSlot = reserveSlot;
 window.deleteReservation = deleteReservation;
-window.predictParking = predictParking;
 window.getReservations = getReservations;
