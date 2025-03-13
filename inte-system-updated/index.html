@@ -1,0 +1,109 @@
+<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <script type="module" src="your-script.js"></script>
+  <script type="module" src="app.js"></script>
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Parking System</title>
+  
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Smart Parking System</h1>
+    
+    <!-- Reservation Section (Firebase) -->
+    <section id="reservationSection">
+      <h2>Reserve a Slot</h2>
+      <div class="form-group">
+        <label for="username">Your Name:</label>
+        <input type="text" id="username" placeholder="Enter your name" />
+      </div>
+      <div class="form-group">
+        <label for="date">Reservation Date:</label>
+        <input type="date" id="date" />
+      </div>
+      <div class="form-group">
+        <label for="time">Reservation Time:</label>
+        <input type="time" id="time" />
+      </div>
+      <div class="form-group">
+        <label for="parkingSlot">Parking Slot:</label>
+        <select id="parkingSlot">
+          <option value="A1">A1</option>
+          <option value="A2">A2</option>
+          <option value="A3">A3</option>
+          <option value="B1">B1</option>
+          <option value="B2">B2</option>
+        </select>
+      </div>
+      <button onclick="reserveSlot()">Reserve Slot</button>
+      
+      <h3>Total Reservations: <span id="reservationCount">0</span></h3>
+      <ul id="reservations"></ul>
+    </section>
+    
+    <hr />
+    
+    <!-- Prediction Section (ML via Flask API) -->
+    <section id="predictionSection">
+      <h2>Slot Prediction & Dynamic Pricing</h2>
+      <div class="form-group">
+        <label for="pred_day">Day of the Week:</label>
+        <select id="pred_day">
+          <option value="Monday">Monday</option>
+          <option value="Tuesday">Tuesday</option>
+          <option value="Wednesday">Wednesday</option>
+          <option value="Thursday">Thursday</option>
+          <option value="Friday">Friday</option>
+          <option value="Saturday">Saturday</option>
+          <option value="Sunday">Sunday</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="pred_time">Time of Day:</label>
+        <select id="pred_time">
+          <option value="Morning">Morning</option>
+          <option value="Afternoon">Afternoon</option>
+          <option value="Evening">Evening</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="is_holiday">Is Holiday?</label>
+        <select id="is_holiday">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="weather_condition">Weather Condition:</label>
+        <select id="weather_condition">
+          <option value="Sunny">Sunny</option>
+          <option value="Cloudy">Cloudy</option>
+          <option value="Rainy">Rainy</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="nearby_events">Nearby Events?</label>
+        <select id="nearby_events">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+      <button onclick="predictParking()">Predict</button>
+      
+      <div class="results">
+        <p id="slotPredictionResult">Slot Availability: -</p>
+        <p id="pricePredictionResult">Dynamic Price per Hour: -</p>
+      </div>
+    </section>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>
