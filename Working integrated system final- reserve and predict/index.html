@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Parking System</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- ✅ Firebase SDK (Ensure it's included) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+  <!-- ✅ Load app.js last to ensure Firebase is available -->
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Smart Parking System</h1>
+    
+    <!-- 🔹 Reservation Section -->
+    <section id="reservationSection">
+      <h2>Reserve a Slot</h2>
+      <div class="form-group">
+        <label for="username">Your Name:</label>
+        <input type="text" id="username" placeholder="Enter your name" required />
+      </div>
+      <div class="form-group">
+        <label for="date">Reservation Date:</label>
+        <input type="date" id="date" required />
+      </div>
+      <div class="form-group">
+        <label for="time">Reservation Time:</label>
+        <input type="time" id="time" required />
+      </div>
+      <div class="form-group">
+        <label for="parkingSlot">Parking Slot:</label>
+        <select id="parkingSlot">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
+      </div>
+      <button onclick="reserveSlot()">Reserve Slot</button>
+      <h3>Total Reservations: <span id="reservationCount">0</span></h3>
+      <ul id="reservations"></ul>
+    </section>
+
+    <hr />
+
+    <!-- 🔹 Prediction Section -->
+    <section id="predictionSection">
+      <h2>Slot Prediction & Dynamic Pricing</h2>
+      <div class="form-group">
+        <label for="day_of_week">Day of the Week:</label>
+        <select id="day_of_week">
+          <option value="Monday">Monday</option>
+          <option value="Tuesday">Tuesday</option>
+          <option value="Wednesday">Wednesday</option>
+          <option value="Thursday">Thursday</option>
+          <option value="Friday">Friday</option>
+          <option value="Saturday">Saturday</option>
+          <option value="Sunday">Sunday</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="time_of_day">Time of Day:</label>
+        <select id="time_of_day">
+          <option value="Morning">Morning</option>
+          <option value="Afternoon">Afternoon</option>
+          <option value="Evening">Evening</option>
+          <option value="Night">Night</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="weather">Weather Condition:</label>
+        <select id="weather">
+          <option value="Sunny">Sunny</option>
+          <option value="Cloudy">Cloudy</option>
+          <option value="Rainy">Rainy</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="Parking_Demand">Parking Demand?</label>
+        <select id="Parking_Demand">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="nearby_events">Nearby Events?</label>
+        <select id="nearby_events">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+      <button id="predictButton">Predict</button>
+
+      <div class="results">
+        <p id="slotAvailability">Slot Availability: -</p>
+        <p id="dynamicPrice">Dynamic Price per Hour: -</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    window.onload = function() {
+      document.getElementById("predictButton").addEventListener("click", predictParking);
+      getReservations(); // ✅ Load reservations after Firebase is initialized
+    };
+  </script>
+</body>
+</html>
