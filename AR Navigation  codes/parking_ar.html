@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AR Parking Navigation</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+</head>
+<body>
+    <a-scene>
+        
+        <!-- Ground Plane -->
+        <a-plane position="0 0 -5" rotation="-90 0 0" width="20" height="20" color="gray"></a-plane>
+
+        <a-entity id="parking-signs"></a-entity>
+        <button id="toggle-mode" style="position: fixed; top: 20px; right: 20px;">Switch Mode</button>
+
+
+
+        <!-- Entrance -->
+        <a-box position="0 0 10" width="2" height="0.5" depth="2" color="orange"></a-box>
+        <a-text value="ENTRANCE" position="0 1.5 10" align="center" color="black"></a-text>
+
+        <!-- Exit -->
+        <a-box position="0 0 -10" width="2" height="0.5" depth="2" color="orange"></a-box>
+        <a-text value="EXIT" position="0 1.5 -10" align="center" color="black"></a-text>
+
+        <!-- Common Pathway (Two-Lane Road) -->
+        <a-plane position="0 0 0" rotation="-90 0 0" width="4" height="20" color="darkgray"></a-plane>
+
+        <a-cylinder position="0 0.01 0" radius="0.05" height="20" rotation="-90 0 0" color="white"></a-cylinder>
+
+        <!-- Dashed Lane Markers -->
+        <a-entity id="laneMarkers"></a-entity>
+        <a-entity id="boundary-poles"></a-entity>
+
+
+        <!-- Parking Slots -->
+        <a-entity id="parkingSlots"></a-entity>
+
+        <!-- Dotted Route -->
+        <a-entity id="route"></a-entity>
+
+        <!-- Final Marker -->
+        <a-entity id="finalMarker"></a-entity>
+    </a-scene>
+
+    <script>
+let isDay = true;
+document.getElementById("toggle-mode").addEventListener("click", function () {
+    let scene = document.querySelector("a-scene");
+    if (isDay) {
+        scene.setAttribute("background", "color: black");
+        isDay = false;
+    } else {
+        scene.setAttribute("background", "color: skyblue");
+        isDay = true;
+    }
+});
+
+
+        let signData = [
+    { text: "Entrance", x: 0, z: 10 },
+    { text: "Exit", x: 0, z: -10 },
+    { text: "Reserved Slot", x: 5, z: 2 }
+];
+
+let signContainer = document.getElementById("parking-signs");
+
+signData.forEach(sign => {
+    let signText = document.createElement("a-text");
+    signText.setAttribute("value", sign.text);
+    signText.setAttribute("position", `${sign.x} 2 ${sign.z}`);
+    signText.setAttribute("color", "white");
+    signText.setAttribute("align", "center");
+    signText.setAttribute("scale", "2 2 2");
+    signText.setAttribute("animation", "property: position; to: " + sign.x + " 2.5 " + sign.z + "; dur: 1000; dir: alternate; loop: true");
+
+    signContainer.appendChild(signText);
+});
+
+        let slots = [
+            { id: 1, position: "-4 0 4", color: "red" },
+            { id: 2, position: "-4 0 2", color: "orange" },
+            { id: 3, position: "-4 0 0", color: "yellow" },
+            { id: 4, position: "-4 0 -2", color: "green" },
+            { id: 5, position: "-4 0 -4", color: "cyan" },
+            { id: 6, position: "4 0 4", color: "pink" },
+            { id: 7, position: "4 0 2", color: "purple" },
+            { id: 8, position: "4 0 0", color: "brown" },
+            { id: 9, position: "4 0 -2", color: "blue" },
+            { id: 10, position: "4 0 -4", color: "lime" }
+        ];
+
+        let bookedSlot = 5; // Change this slot number to test different routes
+        let boundaryContainer = document.getElementById("boundary-poles");
+        let polePositions = [
+    { x: -5, z: 8 }, { x: 5, z: 8 }, // Front boundary poles
+    { x: -5, z: 4 }, { x: 5, z: 4 }, // Middle boundary poles
+    { x: -5, z: 0 }, { x: 5, z: 0 }, // Rear boundary poles
+    ];
+    polePositions.forEach(pos => {
+    let pole = document.createElement("a-cylinder");
+    pole.setAttribute("position", `${pos.x} 0 ${pos.z}`);
+    pole.setAttribute("radius", "0.1");  // Pole thickness
+    pole.setAttribute("height", "1");    // Pole height
+    pole.setAttribute("color", "black"); // Pole color (adjust if needed)
+    pole.setAttribute("shadow", "cast: true; receive: false;"); // Enable shadows
+
+    boundaryContainer.appendChild(pole);
+});
+    
+
+        let parkingSlotsEntity = document.getElementById("parkingSlots");
+        let routeEntity = document.getElementById("route");
+        let laneMarkersEntity = document.getElementById("laneMarkers");
+        let finalMarkerEntity = document.getElementById("finalMarker");
+
+        // Create Parking Slots
+        slots.forEach(slot => {
+            let slotBase = document.createElement("a-box");
+            slotBase.setAttribute("position", slot.position);
+            slotBase.setAttribute("width", "2");
+            slotBase.setAttribute("height", "0.5");
+            slotBase.setAttribute("depth", "4");
+            slotBase.setAttribute("color", slot.color);
+
+            let x = slot.position.split(" ")[0];
+            let z = slot.position.split(" ")[2];
+
+            let label = document.createElement("a-text");
+            label.setAttribute("value", "SLOT " + slot.id);
+            label.setAttribute("position", `${x} 1.5 ${z}`);
+            label.setAttribute("align", "center");
+            label.setAttribute("color", "black");
+
+            parkingSlotsEntity.appendChild(slotBase);
+            parkingSlotsEntity.appendChild(label);
+
+            if (slot.id === bookedSlot) {
+                slotBase.setAttribute("color", "green");
+            }
+        });
+
+        // Generate Dashed White Lines in Both Lanes
+        for (let i = -8; i <= 8; i += 2) {
+            ["-1", "1"].forEach(x => {
+                let marker = document.createElement("a-box");
+                marker.setAttribute("position", `${x} 0.02 ${i}`);
+                marker.setAttribute("width", "0.2");
+                marker.setAttribute("height", "0.02");
+                marker.setAttribute("depth", "1");
+                marker.setAttribute("color", "white");
+                laneMarkersEntity.appendChild(marker);
+            });
+        }
+
+        // Generate Dotted Route to Booked Slot
+        // Modify the route dots to glow dynamically
+function generateDottedRoute(bookedSlotId) {
+    routeEntity.innerHTML = "";
+    finalMarkerEntity.innerHTML = "";
+
+    let bookedSlot = slots.find(s => s.id === bookedSlotId);
+    if (!bookedSlot) return;
+
+    let x = parseFloat(bookedSlot.position.split(" ")[0]);
+    let z = parseFloat(bookedSlot.position.split(" ")[2]);
+
+    let path = [{ x: 0, z: 8 }];
+
+    if (x < 0) {
+        path.push({ x: -2, z: 6 });
+        path.push({ x: -2, z: z });
+        path.push({ x: x, z: z });
+    } else {
+        path.push({ x: 2, z: 6 });
+        path.push({ x: 2, z: z });
+        path.push({ x: x, z: z });
+    }
+
+    path.forEach((p, index) => {
+        let next = path[index + 1];
+        if (next) {
+            let dx = (next.x - p.x) / 5;
+            let dz = (next.z - p.z) / 5;
+            for (let i = 1; i <= 5; i++) {
+                let dot = document.createElement("a-box");
+                dot.setAttribute("position", `${p.x + dx * i} 0.05 ${p.z + dz * i}`);
+                dot.setAttribute("width", "0.2");
+                dot.setAttribute("height", "0.02");
+                dot.setAttribute("depth", "0.2");
+                dot.setAttribute("color", "black");
+                dot.setAttribute("opacity", "0.7");
+                dot.setAttribute("animation", "property: material.opacity; from: 0.5; to: 1; dur: 700; dir: alternate; loop: true");
+                routeEntity.appendChild(dot);
+            }
+        }
+    });
+
+    // Animated Final Marker
+    let finalMarker = document.createElement("a-box");
+    finalMarker.setAttribute("position", `${x} 1 ${z}`);
+    finalMarker.setAttribute("width", "1");
+    finalMarker.setAttribute("height", "1");
+    finalMarker.setAttribute("depth", "1");
+    finalMarker.setAttribute("color", "cyan");
+    finalMarker.setAttribute("opacity", "0.8");
+    finalMarker.setAttribute("animation", "property: position; to: " + x + " 1.5 " + z + "; dir: alternate; loop: true; dur: 800");
+    finalMarkerEntity.appendChild(finalMarker);
+}
+        generateDottedRoute(bookedSlot);
+
+    
+    </script>
+</body>
+</html>
