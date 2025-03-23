@@ -1,0 +1,130 @@
+/* ✅ Dark Mode UI */
+body {
+  background-color: #121212; /* Dark Background */
+  color: #ffffff; /* Light Text */
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* ✅ Container Styling */
+.container {
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
+  background: #1a1a1a; /* Slightly lighter dark */
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(255, 255, 255, 0.1);
+}
+
+/* ✅ Headings */
+h1, h2 {
+  text-align: center;
+  color: #ffcc00; /* Bright Yellow Accent */
+}
+
+/* ✅ Form Fields */
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 5px;
+  border: 1px solid #444;
+  background: #2a2a2a; /* Darker input fields */
+  color: #fff;
+  transition: 0.3s;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: #ffcc00;
+  background: #333;
+}
+
+/* ✅ Buttons */
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+/* ✅ Primary Buttons */
+#predictButton, #viewInAR {
+  background: linear-gradient(135deg, #ffcc00, #ff9900);
+  color: black;
+}
+
+#predictButton:hover, #viewInAR:hover {
+  background: linear-gradient(135deg, #ff9900, #ff6600);
+}
+
+/* ✅ Reserve Slot Button */
+button[onclick="reserveSlot()"] {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+}
+
+button[onclick="reserveSlot()"]:hover {
+  background: linear-gradient(135deg, #0056b3, #003f7f);
+}
+
+/* ✅ Reservation List */
+/* ✅ Scrollable Reservation List */
+#reservations {
+  list-style: none;
+  padding: 0;
+  max-height: 200px; /* Fixed height */
+  overflow-y: auto; /* Enables vertical scrolling */
+  border: 1px solid #444; /* Subtle border */
+  padding: 10px;
+  border-radius: 5px;
+  background: #1a1a1a; /* Matches dark mode */
+}
+
+/* ✅ Scrollbar Styling */
+#reservations::-webkit-scrollbar {
+  width: 8px;
+}
+
+#reservations::-webkit-scrollbar-track {
+  background: #2a2a2a;
+  border-radius: 10px;
+}
+
+#reservations::-webkit-scrollbar-thumb {
+  background: #ffcc00;
+  border-radius: 10px;
+}
+
+#reservations::-webkit-scrollbar-thumb:hover {
+  background: #ff9900;
+}
+
+/* ✅ Individual List Items */
+#reservations li {
+  background: #252525;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0px 2px 5px rgba(255, 255, 255, 0.1);
+}
+
+
+#reservations li span {
+  flex: 1;
+}
+
+
