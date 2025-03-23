@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AR Parking Navigation</title>
+  
+  <!-- A-Frame for AR -->
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
+
+    // Firebase Configuration (Use the same config as in firebase-config.js)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbBpMXMGaRkE3WhnBOrp0XP2tAXpn9uu0",
+      authDomain: "parking-system-managemen-277b5.firebaseapp.com",
+      databaseURL: "https://parking-system-managemen-277b5-default-rtdb.firebaseio.com",
+      projectId: "parking-system-managemen-277b5",
+      storageBucket: "parking-system-managemen-277b5.appspot.com",
+      messagingSenderId: "181875608379",
+      appId: "1:181875608379:web:a259a855b8ab5ff934851e"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    // Fetch latest booked slot from Firebase
+    const latestSlotRef = ref(database, "latestBookedSlot/slotNumber");
+
+    onValue(latestSlotRef, (snapshot) => {
+      const bookedSlot = snapshot.val();
+      if (bookedSlot !== null) {
+        console.log(`🚗 Latest Booked Slot: ${bookedSlot}`);
+        highlightBookedSlot(bookedSlot);
+        generateDottedRoute(bookedSlot);
+      }
+    });
+
+    // ✅ Function to highlight booked slot
+    function highlightBookedSlot(slotNumber) {
+      const slotElement = document.getElementById(`slot-${slotNumber}`);
+      if (slotElement) {
+        slotElement.setAttribute("color", "red");  // Change color to red
+      }
+    }
+  </script>
+
+  <style>
+    /* Glowing neon effect for parking slots */
+    .neon-glow {
+      animation: neonPulse 1.5s infinite alternate;
+    }
+
+    @keyframes neonPulse {
+      from { filter: drop-shadow(0 0 10px cyan); }
+      to { filter: drop-shadow(0 0 20px cyan); }
+    }
+/* HUD display for booked slot */
+#hud {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 20px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 8px;
+      display: none;
+    }
+   
+  </style>
+</head>
+<body>
+  <a-scene>
+    <!-- Camera -->
+    <a-camera position="0 3 15" rotation="0 180 0"></a-camera>
+
+    <!-- Lighting -->
+    <a-light type="ambient" color="#ffffff" intensity="0.7"></a-light>
+    <a-light type="point" position="0 5 0" intensity="1" distance="20" decay="2" color="white"></a-light>
+
+    <!-- Background -->
+    <a-sky color="skyblue"></a-sky>
+
+    <!-- Ground Plane -->
+    <a-plane position="0 0 -5" rotation="-90 0 0" width="20" height="20" color="gray"></a-plane>
+
+    
+
+    <!-- Entrance and Exit -->
+    <a-box position="0 0 10" width="2" height="0.5" depth="2" color="orange"></a-box>
+    <a-text value="ENTRANCE" 
+    position="0 1.5 10" 
+    align="center" 
+    color="black" 
+    scale="2 2 2"
+    font="exo2bold"
+    text="width: 5; anchor: center;">
+</a-text>    
+    <a-box position="0 0 -10" width="2" height="0.5" depth="2" color="orange"></a-box>
+    <a-text value="EXIT" 
+    position="0 1.5 -10" 
+    align="center" 
+    color="black" 
+    scale="2 2 2"
+    font="exo2bold"
+    text="width: 5; anchor: center;">
+</a-text>
+    <!-- Pathway -->
+    <a-plane position="0 0 0" rotation="-90 0 0" width="4" height="20" color="darkgray"></a-plane>
+    <a-cylinder position="0 0.01 0" radius="0.05" height="20" rotation="-90 0 0" color="white"></a-cylinder>
+
+    <!-- Parking Slots and Markers -->
+    <a-entity id="parkingSlots"></a-entity>
+    <a-entity id="route"></a-entity>
+    <a-entity id="finalMarker"></a-entity>
+
+    <!-- Mode Switch Button -->
+    <button id="toggle-mode">Switch Mode</button>
+  </a-scene>
+
+  <script>
+    // ✅ Toggle between Day and Night
+    let isDay = true;
+    document.getElementById("toggle-mode").addEventListener("click", function () {
+      const sky = document.querySelector("a-sky");
+      sky.setAttribute("color", isDay ? "black" : "skyblue");
+      isDay = !isDay;
+    });
+
+    // ✅ Parking Slots Data
+    const slots = [
+      { id: 1, position: "-4 0 4", color: "red" },
+      { id: 2, position: "-4 0 2", color: "orange" },
+      { id: 3, position: "-4 0 0", color: "yellow" },
+      { id: 4, position: "-4 0 -2", color: "green" },
+      { id: 5, position: "-4 0 -4", color: "cyan" },
+      { id: 6, position: "4 0 4", color: "pink" },
+      { id: 7, position: "4 0 2", color: "purple" },
+      { id: 8, position: "4 0 0", color: "brown" },
+      { id: 9, position: "4 0 -2", color: "blue" },
+      { id: 10, position: "4 0 -4", color: "lime" }
+    ];
+
+    // ✅ Generate Parking Slots
+    const parkingSlotsEntity = document.getElementById("parkingSlots");
+    slots.forEach(slot => {
+      const slotBase = document.createElement("a-box");
+      slotBase.setAttribute("position", slot.position);
+      slotBase.setAttribute("width", "3.5");
+      slotBase.setAttribute("height", "0.35");
+      slotBase.setAttribute("depth", "4");
+      slotBase.setAttribute("color", slot.color);
+
+      const label = document.createElement("a-text");
+      label.setAttribute("value", "SLOT- " + slot.id);
+      label.setAttribute("position", `${slot.position.split(" ")[0]} 1.5 ${slot.position.split(" ")[2]}`);
+      label.setAttribute("align", "center");
+      label.setAttribute("color", "black");
+      label.setAttribute("text", "value: SLOT " + slot.id + "; align: center; color: black; width: 7; anchor: center; font: exo2bold");
+label.setAttribute("animation", "property: position; from: " + slot.position.split(" ")[0] + " 1.5 " + slot.position.split(" ")[2] + "; to: " + slot.position.split(" ")[0] + " 2 " + slot.position.split(" ")[2] + "; dir: alternate; dur: 1000; loop: true; easing: easeInOutSine");
+
+
+      parkingSlotsEntity.appendChild(slotBase);
+      parkingSlotsEntity.appendChild(label);
+    });
+
+    // ✅ Firebase Real-Time Listener for Booked Slots
+    function fetchLatestSlot() {
+      const dbRef = firebase.database().ref('latestBookedSlot/slotNumber');
+      dbRef.once('value').then(snapshot => {
+        const latestSlot = snapshot.val();
+        if (latestSlot !== null) {
+          console.log(`🚗 Latest Booked Slot: ${latestSlot}`);
+          generateDottedRoute(latestSlot);
+        } else {
+          console.warn("⚠️ No slot number found in Firebase!");
+        }
+      });
+    }
+
+    firebase.database().ref('latestBookedSlot/slotNumber').on('value', (snapshot) => {
+      const latestSlot = snapshot.val();
+      if (latestSlot !== null) {
+        console.log(`📡 Real-Time Update: Slot ${latestSlot} booked`);
+        generateDottedRoute(latestSlot);
+      }
+    });
+
+    
+
+    // ✅ Path Generation
+    function generateDottedRoute(bookedSlotId) {
+      const routeEntity = document.getElementById("route");
+      const finalMarkerEntity = document.getElementById("finalMarker");
+      routeEntity.innerHTML = "";
+      finalMarkerEntity.innerHTML = "";
+
+      const bookedSlot = slots.find(s => s.id == bookedSlotId);
+      if (!bookedSlot) return;
+
+      const [x, , z] = bookedSlot.position.split(" ");
+      const path = [
+        { x: 0, z: 8 },
+        { x: x < 0 ? -2 : 2, z: 6 },
+        { x: x < 0 ? -2 : 2, z },
+        { x, z }
+      ];
+
+      path.forEach(p => {
+  const dot = document.createElement("a-sphere");
+  dot.setAttribute("position", `${p.x} 0.2 ${p.z}`);
+  dot.setAttribute("radius", "0.25");
+  dot.setAttribute("color", "red");
+  dot.setAttribute("animation", "property: position; to: " + p.x + " 0.4 " + p.z + "; dur: 800; loop: true; dir: alternate");
+  routeEntity.appendChild(dot);
+});
+
+
+      const finalMarker = document.createElement("a-cylinder");
+      finalMarker.setAttribute("position", `${x} 1 ${z}`);
+      finalMarker.setAttribute("width", "0.5");
+      finalMarker.setAttribute("height", "0.5");
+      finalMarker.setAttribute("depth", "0.5");
+      finalMarker.setAttribute("color", "red");
+      finalMarkerEntity.appendChild(finalMarker);
+      
+    }
+
+    fetchLatestSlot();
+
+    // ✅ HUD Display for Booked Slot
+function updateHUD(bookedSlotId) {
+  const hud = document.getElementById("hud");
+  const hudSlot = document.getElementById("hudSlot");
+  hudSlot.textContent = bookedSlotId;
+  hud.style.display = "block";
+}
+
+// ✅ Floating Arrow Navigation
+function addNavigationArrow(x, z) {
+  const arrow = document.createElement("a-entity");
+  arrow.setAttribute("geometry", "primitive: cone; radiusBottom: 0.5; height: 1");
+  arrow.setAttribute("material", "color: yellow");
+  arrow.setAttribute("position", `${x} 2 ${z}`);
+  arrow.setAttribute("animation", "property: position; to: " + x + " 2.3 " + z + "; dur: 1000; loop: true; dir: alternate");
+  arrow.setAttribute("rotation", "-90 0 0");
+  document.querySelector("a-scene").appendChild(arrow);
+}
+
+if (document.getElementById(`slot-${bookedSlot}`)) {
+    highlightBookedSlot(bookedSlot);
+} else {
+    console.warn("Slot element not found!");
+}
+
+
+// ✅ Update slot styling when booked
+function highlightBookedSlot(slotNumber) {
+  const slotElement = document.getElementById(`slot-${slotNumber}`);
+  if (slotElement) {
+    slotElement.classList.add("neon-glow"); // Add glow effect
+    updateHUD(slotNumber); // Show HUD
+    addNavigationArrow(slotElement.object3D.position.x, slotElement.object3D.position.z); // Add arrow
+  }
+}
+
+  </script>
+  <!-- HUD to show booked slot -->
+<div id="hud">📍 Booked Slot: <span id="hudSlot"></span></div>
+
+</body>
+</html>
